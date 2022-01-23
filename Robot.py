@@ -65,6 +65,11 @@ for event in gamepad.read_loop():
                 print("Ende")
                 break
 
+            else:
+                trackDrive.cmd(EDriveCmd.EDCMD_STOP)
+                trackDrive.setSpeed(EDriveSpeed.EDSPD_SLOW)
+
+
 trackDrive.cmd(EDriveCmd.EDCMD_STOP)
 trackDrive.cleanup()
 GPIO.cleanup()
