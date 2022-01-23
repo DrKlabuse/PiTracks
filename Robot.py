@@ -5,10 +5,10 @@ from CTrackDrive import CTrackDrive
 from ITrackDrive import EDriveCmd
 from ITrackDrive import EDriveSpeed
 import time
-import pygame
 import sys
 import os
 #import wiringpi
+from evdev import InputDevice, categorize, ecodes
 
 # GPIO IDs verwenden
 GPIO.setmode(GPIO.BCM)
@@ -22,53 +22,49 @@ trackDrive = CTrackDrive(track_left, track_right)
 print("TrackDrive created")
 trackDrive.start()
 
-os.environ["SDL_VIDEODRIVER"]="dummy"
-pygame.init()
-pygame.display.init()
-pygame.display.set_mode((1,1))
+#creates object 'gamepad' to store the data
+gamepad = InputDevice('/dev/input/event0')
 
-j = pygame.joystick.Joystick(0)
-j.init()
+#button code variables (change to suit your device)
+up = 292
+down = 294
+left = 295
+right = 293
+startBtn = 291
+selectBtn = 288
 
-try:
-    while j.get_button(3) == 0:
-        # pygame.event.pump()
-        pygame.event.get()
+# loop and filter by event code and print the mapped label
+for event in gamepad.read_loop():
+    if event.type == ecodes.EV_KEY:
+        if event.value == 1:
+            if event.code == up: # Vor
+                trackDrive.cmd(EDriveCmd.EDCMD_MOVEFORWARD)
+                trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
+                print("Vor")
+                time.sleep(0.01)
 
-        if j.get_button(4) != 0: # Vor
-            trackDrive.cmd(EDriveCmd.EDCMD_MOVEFORWARD)
-            trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
-            print("Vor")
-            time.sleep(0.01)
+            elif event.code == right:  # Rechts
+                trackDrive.cmd(EDriveCmd.EDCMD_TURNRIGHT)
+                trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
+                print("Rechts")
+                time.sleep(0.01)
 
-        elif j.get_button(5) != 0: # Rechts
-            trackDrive.cmd(EDriveCmd.EDCMD_TURNRIGHT)
-            trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
-            print("Rechts")
-            time.sleep(0.01)
+            elif event.code == left:  # Links
+                trackDrive.cmd(EDriveCmd.EDCMD_TURNLEFT)
+                trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
+                print("Links")
+                time.sleep(0.01)
 
-        elif j.get_button(7) != 0: # Links
-            trackDrive.cmd(EDriveCmd.EDCMD_TURNLEFT)
-            trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
-            print("Links")
-            time.sleep(0.01)
+            elif event.code == down:  # Links
+                trackDrive.cmd(EDriveCmd.EDCMD_MOVEBACKWARD)
+                trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
+                print("Zurueck")
+                time.sleep(0.01)
 
-        elif j.get_button(6) != 0: # Zurueck
-            trackDrive.cmd(EDriveCmd.EDCMD_MOVEBACKWARD)
-            trackDrive.setSpeed(EDriveSpeed.EDSPD_FAST)
-            print("Zurueck")
-            time.sleep(0.01)
+            elif event.code == startBtn:  # pause
+                print("Ende")
+                break
 
-        elif j.get_button(4) == 0 or j.get_button(5) == 0 or j.get_button(6) == 0 or j.get_button(7) == 0:
-            trackDrive.cmd(EDriveCmd.EDCMD_STOP)
-            print("Stillstand")
-
-    trackDrive.cmd(EDriveCmd.EDCMD_STOP)
-    trackDrive.cleanup()
-    GPIO.cleanup()
-
-except KeyboardInterrupt:
-    trackDrive.cmd(EDriveCmd.EDCMD_STOP)
-    trackDrive.cleanup()
-    GPIO.cleanup()
-
+trackDrive.cmd(EDriveCmd.EDCMD_STOP)
+trackDrive.cleanup()
+GPIO.cleanup()
